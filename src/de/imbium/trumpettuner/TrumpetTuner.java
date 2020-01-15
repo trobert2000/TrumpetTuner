@@ -45,8 +45,28 @@ public class TrumpetTuner extends JFrame {
 	public void startTuning() {
 		//MyThread = new TestThread(this);
 		//MyThread.start();
+		
 		tah = new TrumpetTunerAudioHandler(this);
+		
+		// Stopping aftetr 5 seconds
+		Thread stopper = new Thread(new Runnable() {
+			public void run() {
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException ex) {
+					ex.printStackTrace();
+				}
+				tah.stopRecording();
+			}
+		});
+		stopper.start();
+		
 		tah.startRecording();
+	}
+	
+	public void analyzeFile() {
+		tah = new TrumpetTunerAudioHandler(this);
+		tah.analyzeFile();
 	}
 	
 	
@@ -59,7 +79,8 @@ public class TrumpetTuner extends JFrame {
 	public void processActionEvent(ActionEvent event) {
 		if(event.getSource().equals(startButton) ) {
 			System.out.println("Start");
-			startTuning();
+			//startTuning();
+			analyzeFile();
 		}
 		if(event.getSource().equals(stopButton) ) {
 			System.out.println("Stop");
@@ -148,7 +169,7 @@ public class TrumpetTuner extends JFrame {
 
 	public static void main(String[] args) {
 		TrumpetTuner t = new TrumpetTuner();
-		t.startTuning();		
+		//t.startTuning();		
 	}
 }
 
