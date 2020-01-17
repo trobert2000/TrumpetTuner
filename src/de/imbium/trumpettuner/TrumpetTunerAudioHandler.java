@@ -2,28 +2,32 @@ package de.imbium.trumpettuner;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.*;
 import java.util.ArrayList;
 
 import javax.sound.sampled.*;
 
 public class TrumpetTunerAudioHandler {
 
-	private static final int BUF_SIZE = 2048;
+	public static final int BUF_SIZE = 2048;
+	public static final int BUF_SIZE_8 = 8 * BUF_SIZE;
+	
 	private TrumpetTuner  TT;
 	private boolean recordFlag = true;
 	
 	private TargetDataLine line;
 	
-	private AudioFormat format;
+	private AudioFormat format,f2;
 	
 	private ArrayList<byte[]> ChunkList = new ArrayList<byte[]>();
 	
 	public TrumpetTunerAudioHandler(TrumpetTuner tt) {	
 			TT=tt;
 			
-			format= new AudioFormat(11025,16,1,true,true);
+			format= new AudioFormat(11025,16,2,true,true);
+			// make Mono and big_endian For File analysis
+			f2 = new AudioFormat(44100,16,1,true,true);
 	}
-	
 	
 	public void analyzeFile() {
 		// path of the wav file
@@ -31,13 +35,19 @@ public class TrumpetTunerAudioHandler {
 		
 		try {
 			AudioFileFormat fileformat = AudioSystem.getAudioFileFormat(wavFile);
-			AudioInputStream ais = AudioSystem.getAudioInputStream(wavFile);
+			System.out.println("fformat: "+fileformat);
+			
+			// convert file to 44100Hz,Mono,16bit,big_endian
+			AudioInputStream ais = AudioSystem.getAudioInputStream(wavFile);//AudioSystem.getAudioInputStream(f2,AudioSystem.getAudioInputStream(wavFile));
 			
 			ChunkList = new ArrayList<byte[]>();
-			int num_chunks = (int)(ais.available() / BUF_SIZE);
 			
-			while(ais.available() >= BUF_SIZE) {
-				byte[] chunk = ais.readNBytes(BUF_SIZE);
+			// 8 byte for a double so read 8 times the BUF_SIZE
+			int num_chunks = (int)(ais.available() / BUF_SIZE_8);
+			
+			while(ais.available() >= BUF_SIZE_8) {
+				// 8 byte for a double so read 8 times the BUF_SIZE
+				byte[] chunk = ais.readNBytes(BUF_SIZE_8);
 				ChunkList.add(chunk);
 			}
 			
@@ -49,7 +59,11 @@ public class TrumpetTunerAudioHandler {
 			e.printStackTrace();
 		}
 		
-		System.out.println("Chunks "+	ChunkList.size());    
+		
+		
+		
+		
+		
 		
 	}
 	
@@ -82,16 +96,13 @@ public class TrumpetTunerAudioHandler {
 			    
 			    while(recordFlag && (bytesRead = line.read(buf, 0, BUF_SIZE)) != -1) {
 			    	
-			    	
 			    	System.out.println(buf.length + " "+line.available()+ " "+ bytesRead);//recordFlag);
 			    	// start recording
 					//AudioSystem.write(ais, fileType, wavFile);
+			    	
 			    	if(bytesRead == BUF_SIZE) {
 			    		ChunkList.add(buf);
 			    	}
-			    	
-			    	buf = new byte[BUF_SIZE];
-			    	
 			    }
 			    
 			    System.out.println("Chunks "+	ChunkList.size());    
@@ -111,4 +122,6 @@ public class TrumpetTunerAudioHandler {
 		System.out.println("Stop Recording...");
 
 	}
+	
+
 }
